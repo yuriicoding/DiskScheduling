@@ -4,17 +4,21 @@
 #include <time.h> 
 #include "algorithms.h"
 
-void parseInput(int argc, char *argv[], int *requests, int *numRequests) {
+int numRequests = 0;
+
+
+
+void parseInput(int argc, char *argv[], int *requests) {
     if (argc > 1) {
         char *token = strtok(argv[1], ",");
         while (token != NULL) {
-            requests[*numRequests] = atoi(token);
-            (*numRequests)++;
+            requests[numRequests] = atoi(token);
+            (numRequests)++;
             token = strtok(NULL, ",");
         }
     } else {
         // Generate random requests
-        *numRequests = MAX_REQUESTS;
+        numRequests = MAX_REQUESTS;
         srand(time(NULL));
         printf("The original list of tracks: ");
         for (int i = 0; i < MAX_REQUESTS; i++) {
@@ -25,22 +29,34 @@ void parseInput(int argc, char *argv[], int *requests, int *numRequests) {
     }
 }
 
+
+
 int absDiff(int a, int b) {
     return (a > b) ? (a - b) : (b - a);
 }
+
+
+
 int compare(const void *a, const void *b) {
     return (*(int *)a - *(int *)b);
 }
 
 
-void SSTF(int *requests, int numRequests, int start, int *order, int *longestDelay, float *averageDelay) {
+
+void SSTF(int *requests) {
+    int startPosition = requests[0];
+    int currentPosition = startPosition;
+
+    int order[MAX_REQUESTS];
     int processed[MAX_REQUESTS] = {0};
-    int currentPosition = start;
-    int totalTracks = 0;
-    int orderIndex = 0;
     int delay[MAX_REQUESTS] = {0};
+    int orderIndex = 0;
+    
+    int totalTracks = 0;
     int totalDelay = 0;
-    *longestDelay = 0;
+    int longestDelay = 0;
+    float averageDelay = 0;
+    
 
     for (int i = 0; i < numRequests; i++) {
         int closest = -1;
@@ -64,8 +80,8 @@ void SSTF(int *requests, int numRequests, int start, int *order, int *longestDel
                 if (requests[k] == requests[closest]) {
                     delay[k] = orderIndex - 1 - k;
                     totalDelay += (delay[k] > 0) ? delay[k] : 0;
-                    if (delay[k] > *longestDelay) {
-                        *longestDelay = delay[k];
+                    if (delay[k] > longestDelay) {
+                        longestDelay = delay[k];
                     }
                     break;
                 }
@@ -80,18 +96,34 @@ void SSTF(int *requests, int numRequests, int start, int *order, int *longestDel
             delayedRequests++;
         }
     }
-    *averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
+    averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
 
-    printf("Total tracks traversed in SSTF: %d\n", totalTracks);
-    printf("Longest Delay in SSTF: %d\n", *longestDelay);
-    printf("Average Delay in SSTF: %.2f\n", *averageDelay);
+    printf("\nTotal tracks traversed in SSTF: %d\n", totalTracks);
+    printf("Longest Delay in SSTF: %d\n", longestDelay);
+    printf("Average Delay in SSTF: %.2f\n", averageDelay);
+    printf("SSTF Ordered Sequence: ");
+    for (int i = 0; i < numRequests; i++) {
+        printf("%d ", order[i]);
+    }
+    printf("\n");
 }
 
-void CSCAN(int *requests, int numRequests, int start, int *order, int *longestDelay, float *averageDelay) {
-    int sortedRequests[MAX_REQUESTS], originalPositions[MAX_REQUESTS];
-    int totalTracks = 0, orderIndex = 0, currentPosition = start;
-    int delay[MAX_REQUESTS] = {0}, totalDelay = 0;
-    *longestDelay = 0;
+
+
+void CSCAN(int *requests) {
+    int startPosition = requests[0];
+    int currentPosition = startPosition;
+
+    int order[MAX_REQUESTS];
+    int sortedRequests[MAX_REQUESTS];
+    int delay[MAX_REQUESTS] = {0};
+    int originalPositions[MAX_REQUESTS];
+    int orderIndex = 0;
+
+    int totalTracks = 0;
+    int totalDelay = 0;
+    int longestDelay = 0;
+    float averageDelay = 0;
 
     // Copy and sort the request array; also keep track of original positions
     for (int i = 0; i < numRequests; i++) {
@@ -102,7 +134,7 @@ void CSCAN(int *requests, int numRequests, int start, int *order, int *longestDe
 
     // Find start position in sorted array
     int startPos = numRequests - 1;
-    while (startPos >= 0 && sortedRequests[startPos] > start) {
+    while (startPos >= 0 && sortedRequests[startPos] > startPosition) {
         startPos--;
     }
 
@@ -146,8 +178,8 @@ void CSCAN(int *requests, int numRequests, int start, int *order, int *longestDe
     // Calculate longest and average delay
     for (int i = 0; i < numRequests; i++) {
         totalDelay += (delay[i] > 0) ? delay[i] : 0;
-        if (delay[i] > *longestDelay) {
-            *longestDelay = delay[i];
+        if (delay[i] > longestDelay) {
+            longestDelay = delay[i];
         }
     }
 
@@ -155,10 +187,15 @@ void CSCAN(int *requests, int numRequests, int start, int *order, int *longestDe
     for (int i = 0; i < numRequests; i++) {
         if (delay[i] > 0) delayedRequests++;
     }
-    *averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
+    averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
 
-    printf("Total tracks traversed in C-SCAN (Left to Right): %d\n", totalTracks);
-    printf("Longest Delay in C-SCAN: %d\n", *longestDelay);
-    printf("Average Delay in C-SCAN: %.2f\n", *averageDelay);
+    printf("\nTotal tracks traversed in C-SCAN (Left to Right): %d\n", totalTracks);
+    printf("Longest Delay in C-SCAN: %d\n", longestDelay);
+    printf("Average Delay in C-SCAN: %.2f\n", averageDelay);
+    printf("CSCAN Ordered Sequence: ");
+    for (int i = 0; i < numRequests; i++) {
+        printf("%d ", order[i]);
+    }
+    printf("\n");
 }
 

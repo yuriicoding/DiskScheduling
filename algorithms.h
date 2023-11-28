@@ -5,9 +5,9 @@
 #define MAX_TRACKS 200
 #define MAX_REQUESTS 5
 
-void parseInput(int argc, char *argv[], int *requests, int *numRequests);
+void parseInput(int argc, char *argv[], int *requests);
 
-void SSTF(int *requests, int numRequests, int start, int *order, int *longestDelay, float *averageDelay);
-void CSCAN(int *requests, int numRequests, int start, int *order, int *longestDelay, float *averageDelay);
+void SSTF(int *requests);
+void CSCAN(int *requests);
 
 #endif
