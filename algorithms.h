@@ -3,7 +3,8 @@
 
 
 #define MAX_TRACKS 200
-#define MAX_REQUESTS 5
+#define MAX_REQUESTS 200
+#define MIN_REQUESTS 50
 
 void parseInput(int argc, char *argv[], int *requests);
 

@@ -6,9 +6,26 @@
 
 int numRequests = 0;
 
+void generateUniqueRandomRequests(int *requests, int numRequests) {
+    bool generated[MAX_TRACKS] = {false};  
 
+    
+    printf("The original list of tracks: ");
+    for (int i = 0; i < numRequests; i++) {
+        int randTrack;
+        do {
+            randTrack = rand() % MAX_TRACKS;
+        } while (generated[randTrack]);  // Keep generating until a unique number is found
+
+        requests[i] = randTrack;
+        printf("%d ", requests[i]);
+        generated[randTrack] = true;  
+    }
+    printf("\n");
+}
 
 void parseInput(int argc, char *argv[], int *requests) {
+    srand(time(NULL));  
     if (argc > 1) {
         char *token = strtok(argv[1], ",");
         while (token != NULL) {
@@ -16,16 +33,18 @@ void parseInput(int argc, char *argv[], int *requests) {
             (numRequests)++;
             token = strtok(NULL, ",");
         }
-    } else {
-        // Generate random requests
-        numRequests = MAX_REQUESTS;
-        srand(time(NULL));
-        printf("The original list of tracks: ");
-        for (int i = 0; i < MAX_REQUESTS; i++) {
-            requests[i] = rand() % MAX_TRACKS;
-            printf("%d ", requests[i]);
-        }
-        printf("\n");
+        
+        if (numRequests > MAX_REQUESTS)
+            {
+                fprintf(stderr, "Too many arguments");
+                exit(1);
+            }
+    } 
+    else {
+
+        numRequests = MIN_REQUESTS + rand() % (MAX_REQUESTS - MIN_REQUESTS + 1);
+        generateUniqueRandomRequests(requests, numRequests);
+        printf("Number of requests: %d\n", numRequests);
     }
 }
 
@@ -73,9 +92,9 @@ void SSTF(int *requests) {
             totalTracks += minDistance;
             currentPosition = requests[closest];
             processed[closest] = 1;
-            order[orderIndex++] = requests[closest]; // Track the order of servicing
+            order[orderIndex++] = requests[closest]; // Track the order of sequence
 
-            // Calculate delay for the serviced track
+            // Calculate delay for the current track
             for (int k = 0; k < numRequests; k++) {
                 if (requests[k] == requests[closest]) {
                     delay[k] = orderIndex - 1 - k;
@@ -89,7 +108,7 @@ void SSTF(int *requests) {
         }
     }
 
-    // Calculate average delay
+    // Average delay
     int delayedRequests = 0;
     for (int i = 0; i < numRequests; i++) {
         if (delay[i] > 0) {
@@ -98,13 +117,13 @@ void SSTF(int *requests) {
     }
     averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
 
-    printf("\nTotal tracks traversed in SSTF: %d\n", totalTracks);
-    printf("Longest Delay in SSTF: %d\n", longestDelay);
-    printf("Average Delay in SSTF: %.2f\n", averageDelay);
-    printf("SSTF Ordered Sequence: ");
+    printf("\nSSTF Ordered Sequence: ");
     for (int i = 0; i < numRequests; i++) {
         printf("%d ", order[i]);
     }
+    printf("\nTotal tracks traversed in SSTF: %d\n", totalTracks);
+    printf("Longest Delay in SSTF: %d\n", longestDelay);
+    printf("Average Delay in SSTF: %.2f\n", averageDelay);
     printf("\n");
 }
 
@@ -144,7 +163,7 @@ void CSCAN(int *requests) {
         currentPosition = sortedRequests[i];
         order[orderIndex] = sortedRequests[i];
 
-        // Find the original position of this request and calculate delay
+        //calculate delay
         for (int j = 0; j < numRequests; j++) {
             if (requests[j] == sortedRequests[i]) {
                 delay[j] = orderIndex - originalPositions[j];
@@ -154,28 +173,31 @@ void CSCAN(int *requests) {
         orderIndex++;
     }
 
-    // Jump to the rightmost end
-    totalTracks += currentPosition; // Moving to track 0
-    totalTracks += MAX_TRACKS - 1; // Moving to the highest track
-    currentPosition = MAX_TRACKS - 1;
+    if(orderIndex < numRequests)
+    {
+        // Jump to the rightmost end
+        totalTracks += currentPosition; // Moving to track 0
+        totalTracks += MAX_TRACKS - 1; // Moving to the highest track
+        currentPosition = MAX_TRACKS - 1;
 
-    // Continue servicing the remaining requests
-    for (int i = numRequests - 1; i > startPos; i--) {
-        totalTracks += abs(sortedRequests[i] - currentPosition);
-        currentPosition = sortedRequests[i];
-        order[orderIndex] = sortedRequests[i];
+        // Continue servicing the remaining requests
+        for (int i = numRequests - 1; i > startPos; i--) {
+            totalTracks += abs(sortedRequests[i] - currentPosition);
+            currentPosition = sortedRequests[i];
+            order[orderIndex] = sortedRequests[i];
 
-        // Update delay
-        for (int j = 0; j < numRequests; j++) {
-            if (requests[j] == sortedRequests[i]) {
-                delay[j] = orderIndex - originalPositions[j];
-                break;
+            // Update delay
+            for (int j = 0; j < numRequests; j++) {
+                if (requests[j] == sortedRequests[i]) {
+                    delay[j] = orderIndex - originalPositions[j];
+                    break;
+                }
             }
+            orderIndex++;
         }
-        orderIndex++;
     }
 
-    // Calculate longest and average delay
+    // Calculate delays
     for (int i = 0; i < numRequests; i++) {
         totalDelay += (delay[i] > 0) ? delay[i] : 0;
         if (delay[i] > longestDelay) {
@@ -189,13 +211,13 @@ void CSCAN(int *requests) {
     }
     averageDelay = (delayedRequests > 0) ? (float)totalDelay / delayedRequests : 0.0f;
 
-    printf("\nTotal tracks traversed in C-SCAN (Left to Right): %d\n", totalTracks);
-    printf("Longest Delay in C-SCAN: %d\n", longestDelay);
-    printf("Average Delay in C-SCAN: %.2f\n", averageDelay);
     printf("CSCAN Ordered Sequence: ");
     for (int i = 0; i < numRequests; i++) {
         printf("%d ", order[i]);
     }
+    printf("\nTotal tracks traversed in C-SCAN: %d\n", totalTracks);
+    printf("Longest Delay in C-SCAN: %d\n", longestDelay);
+    printf("Average Delay in C-SCAN: %.2f\n", averageDelay);
     printf("\n");
 }
 
